@@ -1,56 +1,59 @@
-#[allow(unused_variables)]
+#[allow(unused_variables, dead_code)]
 #[derive(Debug)]
 struct CubeSat {
     id: u64,
     mailbox: Mailbox,
 }
+
 #[derive(Debug)]
 enum StatusMessage {
     Ok,
 }
+
 #[derive(Debug)]
 struct Mailbox {
     messages: Vec<Message>,
 }
-type Message = String;
+
+#[derive(Debug)]
+struct Message {
+    to: u64,
+    content: String,
+}
+
 struct Groundstation {}
+
 impl Groundstation {
+    fn connect(&self, sat_id: u64) -> CubeSat {
+        CubeSat {
+            id: sat_id,
+            mailbox: Mailbox { messages: vec![] },
+        }
+    }
     fn send(&self, to: &mut CubeSat, msg: Message) {
         to.mailbox.messages.push(msg);
     }
 }
+
 impl CubeSat {
     fn recv(&mut self) -> Option<Message> {
         self.mailbox.messages.pop()
     }
 }
+
 fn check_status(sat_id: &CubeSat) {
     println!("{:?}: {:?}", sat_id.id, StatusMessage::Ok);
 }
 
+fn fetch_sat_ids() -> Vec<u64> {
+    vec![1, 2, 3]
+}
+
 fn main() {
     let base = Groundstation {};
-    let sat_a = CubeSat {
-        id: 0,
-        mailbox: Mailbox { messages: vec![] },
-    };
-    let mut sat_b = CubeSat {
-        id: 1,
-        mailbox: Mailbox { messages: vec![] },
-    };
-    let sat_c = CubeSat {
-        id: 2,
-        mailbox: Mailbox { messages: vec![] },
-    };
-    base.send(&mut sat_b, Message::from("hello there!"));
-    println!("{:?}", sat_b);
-
-    check_status(&sat_a);
-    check_status(&sat_b);
-    check_status(&sat_c);
-
-    //waiting
-    check_status(&sat_a);
-    check_status(&sat_b);
-    check_status(&sat_c);
+    let sat_ids = fetch_sat_ids();
+    for sat_id in sat_ids {
+        let mut sat = base.connect(sat_id);
+        base.send(&mut sat, Message::from("hello"));
+    }
 }
