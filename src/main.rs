@@ -5,8 +5,8 @@ struct CubeSat {
     mailbox: Mailbox,
 }
 impl CubeSat {
-    fn recv(&mut self) -> Option<Message> {
-        self.mailbox.messages.pop()
+    fn recv(&self, mailbox: &mut Mailbox) -> Option<Message> {
+        mailbox.deliver(&self)
     }
 }
 #[derive(Debug)]
@@ -48,8 +48,8 @@ impl Groundstation {
             mailbox: Mailbox { messages: vec![] },
         }
     }
-    fn send(&self, to: &mut CubeSat, msg: Message) {
-        to.mailbox.messages.push(msg);
+    fn send(&self, mailbox: &mut Mailbox, msg: Message) {
+        mailbox.post(msg);
     }
 }
 
@@ -62,10 +62,20 @@ fn fetch_sat_ids() -> Vec<u64> {
 }
 
 fn main() {
+    let mut mail = Mailbox { messages: vec![] };
     let base = Groundstation {};
     let sat_ids = fetch_sat_ids();
     for sat_id in sat_ids {
-        let mut sat = base.connect(sat_id);
-        base.send(&mut sat, Message::from("hello"));
+        let msg = Message {
+            to: sat_id,
+            content: String::from("hello"),
+        };
+        base.send(&mut mail, msg)
+    }
+    let sat_ids = fetch_sat_ids();
+    for sat_id in sat_ids {
+        let sat = base.connect(sat_id);
+        let msg = sat.recv(&mut mail);
+        println!("{:?}: {:?}", sat, msg);
     }
 }
