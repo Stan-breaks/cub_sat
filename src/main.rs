@@ -4,7 +4,11 @@ struct CubeSat {
     id: u64,
     mailbox: Mailbox,
 }
-
+impl CubeSat {
+    fn recv(&mut self) -> Option<Message> {
+        self.mailbox.messages.pop()
+    }
+}
 #[derive(Debug)]
 enum StatusMessage {
     Ok,
@@ -13,6 +17,20 @@ enum StatusMessage {
 #[derive(Debug)]
 struct Mailbox {
     messages: Vec<Message>,
+}
+impl Mailbox {
+    fn post(&mut self, msg: Message) {
+        self.messages.push(msg);
+    }
+    fn deliver(&mut self, receipent: &CubeSat) -> Option<Message> {
+        for i in 0..self.messages.len() {
+            if self.messages[i].to == receipent.id {
+                let msg = self.messages.remove(i);
+                return Some(msg);
+            }
+        }
+        None
+    }
 }
 
 #[derive(Debug)]
@@ -32,12 +50,6 @@ impl Groundstation {
     }
     fn send(&self, to: &mut CubeSat, msg: Message) {
         to.mailbox.messages.push(msg);
-    }
-}
-
-impl CubeSat {
-    fn recv(&mut self) -> Option<Message> {
-        self.mailbox.messages.pop()
     }
 }
 
